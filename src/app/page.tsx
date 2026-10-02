@@ -61,12 +61,12 @@ export default function Home() {
             >
               Buka Form Presensi Mobile
             </Link>
-            <a
-              href="#dashboard-preview"
+            <Link
+              href="/dashboard"
               className="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-white text-brand-dark border border-brand-dark/20 font-semibold text-sm hover:bg-brand-canvas transition"
             >
-              Lihat Dashboard
-            </a>
+              Buka Dashboard Dapur
+            </Link>
           </div>
         </section>
 
