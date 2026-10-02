@@ -1,35 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Lock,
   Mail,
   ArrowRight,
-  ShieldCheck,
   AlertCircle,
   Eye,
   EyeOff,
-  ChefHat,
-  HeartPulse,
 } from "lucide-react";
 
 export default function LoginPage() {
-  const router = useRouter();
-
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // Quick Demo Autofill
-  const handleQuickFill = (email: string) => {
-    setIdentifier(email);
-    setPassword("password123");
-    setErrorMsg(null);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +27,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ identifier: identifier.trim(), password }),
       });
 
       const json = await res.json();
@@ -49,9 +36,12 @@ export default function LoginPage() {
         throw new Error(json.error || "Gagal masuk ke sistem.");
       }
 
-      // Redirect ke dashboard
-      router.push("/dashboard");
-      router.refresh();
+      // Redirect penuh ke dashboard agar cookie terkirim sempurna ke server middleware
+      const redirectUrl =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("redirect") || "/dashboard"
+          : "/dashboard";
+      window.location.href = redirectUrl;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
       setErrorMsg(msg);
@@ -89,7 +79,7 @@ export default function LoginPage() {
           </div>
 
           {errorMsg && (
-            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5">
+            <div role="alert" className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
@@ -98,14 +88,21 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Input Identifier */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-brand-dark">
+              <label htmlFor="login-identifier" className="text-xs font-bold text-brand-dark">
                 Email atau No. Handphone
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-brand-dark/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
+                  id="login-identifier"
                   type="text"
                   required
+                  aria-required="true"
+                  aria-invalid={Boolean(errorMsg)}
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   placeholder="admin@sppg.id atau 0812..."
@@ -116,12 +113,19 @@ export default function LoginPage() {
 
             {/* Input Password */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-brand-dark">Kata Sandi</label>
+              <label htmlFor="login-password" className="text-xs font-bold text-brand-dark">Kata Sandi</label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-brand-dark/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
+                  id="login-password"
                   type={showPassword ? "text" : "password"}
                   required
+                  aria-required="true"
+                  aria-invalid={Boolean(errorMsg)}
+                  autoComplete="current-password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -130,7 +134,8 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-brand-dark/50 hover:text-brand-dark"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-dark/50 hover:text-brand-dark rounded-lg cursor-pointer transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark"
+                  aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -152,50 +157,27 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Accounts */}
-          <div className="pt-4 border-t border-brand-dark/10 space-y-2.5">
-            <p className="text-[11px] font-bold text-brand-dark/70 text-center uppercase tracking-wider">
-              Pilihan Akun Demo (Fase 1)
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill("admin@sppg.id")}
-                className="p-2.5 rounded-xl border border-brand-dark/15 bg-brand-canvas/70 hover:bg-brand-pastel/30 text-left text-xs transition space-y-0.5 cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5 font-bold text-brand-dark">
-                  <ChefHat className="w-3.5 h-3.5 text-brand-dark" /> Admin SPPG
-                </div>
-                <p className="text-[10px] text-brand-dark/60 truncate">admin@sppg.id</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickFill("gizi@sppg.id")}
-                className="p-2.5 rounded-xl border border-brand-dark/15 bg-brand-canvas/70 hover:bg-brand-pastel/30 text-left text-xs transition space-y-0.5 cursor-pointer"
-              >
-                <div className="flex items-center gap-1.5 font-bold text-brand-dark">
-                  <HeartPulse className="w-3.5 h-3.5 text-brand-gold" /> Ahli Gizi
-                </div>
-                <p className="text-[10px] text-brand-dark/60 truncate">gizi@sppg.id</p>
-              </button>
-            </div>
-            <p className="text-[10px] text-center text-brand-dark/50">
-              Kata sandi default: <span className="font-mono font-bold">password123</span>
-            </p>
-          </div>
         </div>
 
         {/* Bottom Navigation */}
-        <div className="text-center text-xs space-x-4 text-brand-dark/70">
-          <Link href="/" className="hover:underline">
-            ← Kembali ke Beranda
-          </Link>
-          <span>•</span>
-          <Link href="/presensi" className="hover:underline">
-            Presensi Pekerja (Tanpa Login)
-          </Link>
+        <div className="text-center text-xs space-y-2 text-brand-dark/70">
+          <div>
+            <Link
+              href="/daftar"
+              className="min-h-[44px] inline-flex items-center gap-1.5 text-xs font-bold text-brand-dark hover:underline px-3 py-1.5 rounded-xl bg-white border border-brand-dark/15 shadow-2xs"
+            >
+              Karyawan Baru? Daftarkan Wajah & Biometrik →
+            </Link>
+          </div>
+          <div className="space-x-4">
+            <Link href="/" className="min-h-[44px] inline-flex items-center hover:underline px-2">
+              ← Kembali ke Beranda
+            </Link>
+            <span>•</span>
+            <Link href="/presensi" className="min-h-[44px] inline-flex items-center hover:underline px-2">
+              Presensi Pekerja
+            </Link>
+          </div>
         </div>
       </div>
     </div>

@@ -22,6 +22,8 @@ export async function GET() {
         namaLengkap: anggota.namaLengkap,
         jabatan: anggota.jabatan,
         nik: anggota.nik,
+        fotoUrl: anggota.fotoUrl,
+        fotoTanganUrl: anggota.fotoTanganUrl,
       })
       .from(anggota)
       .where(eq(anggota.statusAktif, true));

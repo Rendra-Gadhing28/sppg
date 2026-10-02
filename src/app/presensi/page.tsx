@@ -42,6 +42,28 @@ interface PresensiLog {
   jarakKeDapurMeter: number;
 }
 
+function RealtimeClock() {
+  const [time, setTime] = useState<string>("");
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setTime(
+        now.toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }) + " WIB"
+      );
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return <span className="text-xs font-mono font-bold text-brand-green">{time || "--:--:-- WIB"}</span>;
+}
+
 export default function PresensiPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -71,24 +93,6 @@ export default function PresensiPage() {
   // Submission & UI State
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [currentTime, setCurrentTime] = useState<string>("");
-
-  // Update Jam WIB Realtime
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(
-        now.toLocaleTimeString("id-ID", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        }) + " WIB"
-      );
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Fetch Konfigurasi & Data Master
   const fetchData = useCallback(async () => {
@@ -330,10 +334,10 @@ export default function PresensiPage() {
       {/* Mobile Frame Container */}
       <div className="w-full max-w-md bg-white min-h-screen flex flex-col shadow-xl border-x border-brand-dark/10">
         {/* Top Header */}
-        <header className="bg-brand-dark text-white px-4 py-3.5 flex items-center justify-between sticky top-0 z-20">
+        <header className="bg-brand-dark text-white px-4 py-3 flex items-center justify-between sticky top-0 z-20">
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-xs text-brand-pastel hover:text-white transition"
+            className="min-h-[44px] min-w-[44px] inline-flex items-center gap-1.5 px-2 text-xs text-brand-pastel hover:text-white transition"
           >
             <ArrowLeft className="w-4 h-4" /> Beranda
           </Link>
@@ -342,7 +346,7 @@ export default function PresensiPage() {
             <span className="text-[10px] text-brand-pastel">{dapur?.namaDapur || "Dapur Sentral"}</span>
           </div>
           <div className="text-right">
-            <span className="text-xs font-mono font-bold text-brand-green">{currentTime}</span>
+            <RealtimeClock />
           </div>
         </header>
 
@@ -368,7 +372,7 @@ export default function PresensiPage() {
             <button
               type="button"
               onClick={() => setJenisPresensi("masuk")}
-              className={`py-2 text-xs font-bold rounded-lg transition ${
+              className={`min-h-[44px] py-2.5 px-3 text-xs font-bold rounded-lg transition ${
                 jenisPresensi === "masuk"
                   ? "bg-brand-dark text-white shadow-sm"
                   : "text-brand-dark/70 hover:text-brand-dark"
@@ -379,7 +383,7 @@ export default function PresensiPage() {
             <button
               type="button"
               onClick={() => setJenisPresensi("keluar")}
-              className={`py-2 text-xs font-bold rounded-lg transition ${
+              className={`min-h-[44px] py-2.5 px-3 text-xs font-bold rounded-lg transition ${
                 jenisPresensi === "keluar"
                   ? "bg-brand-dark text-white shadow-sm"
                   : "text-brand-dark/70 hover:text-brand-dark"
@@ -394,10 +398,19 @@ export default function PresensiPage() {
         <form onSubmit={handleSubmit} className="px-4 py-2 space-y-4 flex-1 flex flex-col">
           {/* Pilih Pekerja Dapur */}
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-brand-dark flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5" /> Pilih Pekerja
-            </label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="pilih-pekerja-select" className="text-[11px] font-bold text-brand-dark flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5" /> Pilih Pekerja
+              </label>
+              <Link
+                href="/daftar"
+                className="text-[11px] font-bold text-brand-dark hover:underline flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-brand-pastel/50"
+              >
+                + Karyawan Baru?
+              </Link>
+            </div>
             <select
+              id="pilih-pekerja-select"
               value={selectedAnggotaId}
               onChange={(e) => setSelectedAnggotaId(e.target.value)}
               className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl border border-brand-dark/20 bg-white text-brand-dark focus:outline-none focus:ring-2 focus:ring-brand-dark"
@@ -420,7 +433,7 @@ export default function PresensiPage() {
                 <button
                   type="button"
                   onClick={handleRetakePhoto}
-                  className="text-brand-dark font-bold underline hover:opacity-80"
+                  className="min-h-[44px] min-w-[44px] px-2.5 inline-flex items-center text-brand-dark font-bold underline hover:opacity-80 cursor-pointer"
                 >
                   Foto Ulang
                 </button>
@@ -458,7 +471,7 @@ export default function PresensiPage() {
                 <button
                   type="button"
                   onClick={handleCapturePhoto}
-                  className="absolute bottom-3 px-4 py-2 rounded-full bg-white text-brand-dark text-xs font-bold shadow-lg flex items-center gap-1.5 hover:bg-brand-canvas active:scale-95 transition"
+                  className="absolute bottom-3 min-h-[44px] px-5 py-2.5 rounded-full bg-white text-brand-dark text-xs font-bold shadow-lg flex items-center gap-1.5 hover:bg-brand-canvas active:scale-95 transition cursor-pointer"
                 >
                   <Camera className="w-4 h-4" /> Jepret Foto
                 </button>
@@ -472,7 +485,7 @@ export default function PresensiPage() {
                   <button
                     type="button"
                     onClick={startCamera}
-                    className="px-3 py-1.5 rounded-lg bg-brand-pastel text-brand-dark text-xs font-bold"
+                    className="min-h-[44px] px-4 py-2 rounded-lg bg-brand-pastel text-brand-dark text-xs font-bold cursor-pointer"
                   >
                     Coba Lagi
                   </button>
@@ -504,7 +517,7 @@ export default function PresensiPage() {
                 <button
                   type="button"
                   onClick={ambilLokasi}
-                  className="text-[11px] underline flex items-center gap-0.5"
+                  className="min-h-[44px] min-w-[44px] px-2.5 py-1 inline-flex items-center justify-center gap-1 text-[11px] underline font-bold cursor-pointer"
                 >
                   <RefreshCw className="w-3 h-3" /> Refresh
                 </button>
@@ -540,7 +553,7 @@ export default function PresensiPage() {
             <button
               type="button"
               onClick={handleVerifyBiometric}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
+              className={`min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
                 biometricVerified
                   ? "bg-brand-green text-brand-dark border border-brand-green"
                   : "bg-brand-dark text-white hover:bg-brand-dark/90 active:scale-95"
@@ -561,6 +574,8 @@ export default function PresensiPage() {
           {/* Alert Notification */}
           {alert && (
             <div
+              role="alert"
+              aria-live="polite"
               className={`p-3 rounded-xl text-xs font-medium flex items-start gap-2 ${
                 alert.type === "success"
                   ? "bg-brand-green/20 border border-brand-green text-brand-dark"
@@ -644,6 +659,15 @@ export default function PresensiPage() {
                 </div>
               ))
             )}
+          </div>
+
+          <div className="pt-2 text-center">
+            <Link
+              href="/daftar"
+              className="min-h-[44px] inline-flex items-center justify-center gap-1.5 text-xs font-bold text-brand-dark hover:underline px-3 py-2 rounded-xl bg-white border border-brand-dark/15 w-full shadow-2xs"
+            >
+              <User className="w-3.5 h-3.5" /> Pendaftaran Karyawan & Biometrik Baru →
+            </Link>
           </div>
         </div>
       </div>

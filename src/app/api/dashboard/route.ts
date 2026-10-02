@@ -9,8 +9,23 @@ import {
   resepItem,
   bahan,
   stokMutasi,
+  supplier,
+  purchaseOrder,
+  stokBatch,
+  distribusiPengiriman,
+  dapurCabang,
+  transferStokCabang,
+  foodWasteLog,
+  komplainSekolah,
+  waMessageLogs,
+  aiMenuPreset,
+  vrpRuteHarian,
+  iotSensorDevice,
+  iotTelemetriSuhu,
+  bgnLaporanAudit,
 } from "@/db/schema";
 import { kalkulasiKebutuhanBOM } from "@/lib/bom";
+import { evaluasiStatusExpiry } from "@/lib/fefo";
 import { eq, sql, desc } from "drizzle-orm";
 
 export async function GET() {
@@ -129,6 +144,107 @@ export async function GET() {
       .orderBy(desc(stokMutasi.createdAt))
       .limit(5);
 
+    // 5. Metrik Fase 2 (Pengadaan, Batch Expiry, Distribusi)
+    const [supplierCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(supplier)
+      .where(eq(supplier.isActive, true));
+
+    const [poCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(purchaseOrder)
+      .where(eq(purchaseOrder.status, "diajukan"));
+
+    const activeBatches = await db
+      .select({
+        id: stokBatch.id,
+        tanggalExpired: stokBatch.tanggalExpired,
+      })
+      .from(stokBatch)
+      .where(eq(stokBatch.statusBatch, "aktif"));
+
+    const batchSegeraExpired = activeBatches.filter((b) => {
+      const { status } = evaluasiStatusExpiry(b.tanggalExpired);
+      return status === "segera_kedaluwarsa" || status === "kedaluwarsa";
+    }).length;
+
+    const listDistribusiHariIni = await db.query.distribusiPengiriman.findMany({
+      where: eq(distribusiPengiriman.tanggal, todayStr),
+      with: {
+        armada: true,
+        serahTerimaList: {
+          with: {
+            sekolah: true,
+          },
+        },
+      },
+      limit: 5,
+    });
+
+    const pengirimanTotal = listDistribusiHariIni.length;
+    const pengirimanSelesai = listDistribusiHariIni.filter(
+      (d) => d.status === "selesai"
+    ).length;
+    const pengirimanJalan = listDistribusiHariIni.filter(
+      (d) => d.status === "dalam_perjalanan"
+    ).length;
+
+    // 6. Metrik Fase 3 (Multi-Dapur, Waste, Komplain, WhatsApp)
+    const [cabangCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(dapurCabang)
+      .where(eq(dapurCabang.isActive, true));
+
+    const [transferAktifCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(transferStokCabang)
+      .where(sql`status IN ('diajukan', 'dalam_perjalanan')`);
+
+    const [wasteHariIni] = await db
+      .select({
+        totalKg: sql<string>`coalesce(sum(berat_kg), 0)::text`,
+        totalRp: sql<string>`coalesce(sum(estimasi_kerugian_rp), 0)::text`,
+      })
+      .from(foodWasteLog)
+      .where(eq(foodWasteLog.tanggal, todayStr));
+
+    const [komplainPendingCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(komplainSekolah)
+      .where(sql`status IN ('baru', 'investigasi')`);
+
+    const [waCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(waMessageLogs);
+
+    // 7. Metrik Fase 4 (AI Menu, VRP Routing, IoT HACCP & BGN Audit)
+    const [aiCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(aiMenuPreset);
+
+    const [vrpCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(vrpRuteHarian)
+      .where(eq(vrpRuteHarian.tanggal, todayStr));
+
+    const [iotCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(iotSensorDevice)
+      .where(eq(iotSensorDevice.statusAktif, true));
+
+    const telemetriHaccp = await db
+      .select({ isAnomali: iotTelemetriSuhu.isAnomaliHaccp })
+      .from(iotTelemetriSuhu)
+      .limit(100);
+
+    const totalTelem = telemetriHaccp.length;
+    const anomaliCount = telemetriHaccp.filter((t) => t.isAnomali).length;
+    const haccpScore = totalTelem > 0 ? Math.round(((totalTelem - anomaliCount) / totalTelem) * 1000) / 10 : 100;
+
+    const [bgnCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(bgnLaporanAudit);
+
     return NextResponse.json({
       tanggal: todayStr,
       metrics: {
@@ -139,12 +255,33 @@ export async function GET() {
         tepatWaktuCount,
         defisitCount,
         statusProduksi: jadwal?.statusProduksi || "draft",
+        // Fase 2 Metrics
+        totalSupplier: supplierCount?.count || 0,
+        poDiajukanCount: poCount?.count || 0,
+        batchSegeraExpired,
+        pengirimanTotal,
+        pengirimanSelesai,
+        pengirimanJalan,
+        // Fase 3 Metrics
+        totalCabang: cabangCount?.count || 0,
+        transferStokAktif: transferAktifCount?.count || 0,
+        foodWasteHariIniKg: parseFloat(wasteHariIni?.totalKg || "0"),
+        foodWasteHariIniRp: parseFloat(wasteHariIni?.totalRp || "0"),
+        komplainPendingCount: komplainPendingCount?.count || 0,
+        waTotalCount: waCount?.count || 0,
+        // Fase 4 Metrics
+        aiPresetCount: aiCount?.count || 0,
+        vrpRuteCount: vrpCount?.count || 0,
+        iotDeviceCount: iotCount?.count || 0,
+        haccpScore,
+        bgnAuditCount: bgnCount?.count || 0,
       },
       jadwal,
       bomList,
       daftarSekolah,
       presensiHariIni,
       mutasiTerbaru,
+      distribusiHariIni: listDistribusiHariIni,
     });
   } catch (error: unknown) {
     const err = error as { message?: string };

@@ -55,3 +55,39 @@ export function checkRateLimit(
     resetMs: Math.max(0, record.resetTime - now),
   };
 }
+
+export function isRateLimited(
+  key: string,
+  limit: number = 5
+): { blocked: boolean; resetMs: number } {
+  const now = Date.now();
+  const record = rateLimitMap.get(key);
+  if (!record || now > record.resetTime) {
+    return { blocked: false, resetMs: 0 };
+  }
+  if (record.count >= limit) {
+    return { blocked: true, resetMs: Math.max(0, record.resetTime - now) };
+  }
+  return { blocked: false, resetMs: 0 };
+}
+
+export function recordFailedAttempt(
+  key: string,
+  windowMs: number = 15 * 60 * 1000
+): void {
+  const now = Date.now();
+  const record = rateLimitMap.get(key);
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
+  } else {
+    record.count += 1;
+  }
+}
+
+export function resetRateLimit(key: string): void {
+  rateLimitMap.delete(key);
+}
+
+export function clearAllRateLimits(): void {
+  rateLimitMap.clear();
+}

@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { PwaRegister } from "@/components/PwaRegister";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -8,9 +9,23 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#071e49",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   title: "Sistem Informasi SPPG — Dapur MBG",
   description: "Sistem presensi, monitoring menu, dan kalkulasi stok Makanan Bergizi Gratis (SPPG)",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "SPPG Dapur",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -22,6 +37,7 @@ export default function RootLayout({
     <html lang="id" className={`${plusJakartaSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-brand-canvas text-brand-dark">
         {children}
+        <PwaRegister />
       </body>
     </html>
   );

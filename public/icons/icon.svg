@@ -1,0 +1,10 @@
+
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="112" fill="#071e49"/>
+  <circle cx="256" cy="220" r="120" fill="#b4dfe9" fill-opacity="0.15"/>
+  <path d="M176 250 C176 185 336 185 336 250 Z" fill="#b4dfe9"/>
+  <rect x="166" y="256" width="180" height="20" rx="10" fill="#92d05d"/>
+  <path d="M216 170 C216 140 296 140 296 170 Z" fill="#d1b06c"/>
+  <text x="256" y="370" font-family="system-ui, sans-serif" font-size="76" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="4">SPPG</text>
+  <text x="256" y="415" font-family="system-ui, sans-serif" font-size="24" font-weight="600" fill="#92d05d" text-anchor="middle" letter-spacing="2">DAPUR MBG</text>
+</svg>

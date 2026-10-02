@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { jadwalMenu, menu, resepItem, bahan, stokMutasi, sekolah } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { jadwalMenu, menu, resepItem, bahan, stokMutasi, sekolah, stokBatch } from "@/db/schema";
+import { alokasikanBatchFEFO } from "@/lib/fefo";
+import { eq, sql, asc } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
   try {
@@ -75,6 +76,34 @@ export async function POST(req: NextRequest) {
             stokSaatIni: String(saldoAkhir),
           })
           .where(eq(bahan.id, item.bahanId));
+
+        // Pemotongan Batch dengan aturan FEFO (First Expired, First Out)
+        const activeBatches = await tx
+          .select({
+            id: stokBatch.id,
+            bahanId: stokBatch.bahanId,
+            nomorBatch: stokBatch.nomorBatch,
+            tanggalExpired: stokBatch.tanggalExpired,
+            jumlahSisa: sql<number>`${stokBatch.jumlahSisa}::float`,
+          })
+          .from(stokBatch)
+          .where(
+            sql`${stokBatch.bahanId} = ${item.bahanId} AND ${stokBatch.statusBatch} = 'aktif'`
+          )
+          .orderBy(asc(stokBatch.tanggalExpired));
+
+        if (activeBatches.length > 0) {
+          const alokasiFEFO = alokasikanBatchFEFO(activeBatches, jumlahKeluar);
+          for (const alok of alokasiFEFO.alokasi) {
+            await tx
+              .update(stokBatch)
+              .set({
+                jumlahSisa: String(alok.sisaSetelahnya),
+                statusBatch: alok.statusBatchBaru,
+              })
+              .where(eq(stokBatch.id, alok.batchId));
+          }
+        }
 
         // Catat di ledger mutasi stok
         const [mutasi] = await tx
