@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { absensi, konfigurasiDapur, jadwalShift, shiftKerja, anggota } from "@/db/schema";
 import { cekDalamRadius } from "@/lib/geo";
 import { evaluasiStatusMasuk, evaluasiStatusKeluar } from "@/lib/shift";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { eq, and, desc } from "drizzle-orm";
 
 export async function GET() {
@@ -65,6 +66,15 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "127.0.0.1";
+    const rateLimit = checkRateLimit(`absensi:${ip}`, 10, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan presensi. Tunggu 1 menit." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const {
       anggotaId,

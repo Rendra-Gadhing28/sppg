@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { verifyPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { or, eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
@@ -12,6 +13,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Email/Nomor HP dan password wajib diisi." },
         { status: 400 }
+      );
+    }
+
+    // Rate Limiting anti-brute force: Maksimal 5x gagal dalam 15 menit
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "127.0.0.1";
+    const rateLimit = checkRateLimit(`login:${ip}:${identifier}`, 5, 15 * 60 * 1000);
+
+    if (!rateLimit.allowed) {
+      const waitMinutes = Math.ceil(rateLimit.resetMs / 60000);
+      return NextResponse.json(
+        {
+          error: `Terlalu banyak percobaan login gagal. Demi keamanan, silakan tunggu ${waitMinutes} menit sebelum mencoba kembali.`,
+        },
+        { status: 429 }
       );
     }
 
