@@ -1,9 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { absensi, konfigurasiDapur, jadwalShift, shiftKerja } from "@/db/schema";
+import { absensi, konfigurasiDapur, jadwalShift, shiftKerja, anggota } from "@/db/schema";
 import { cekDalamRadius } from "@/lib/geo";
 import { evaluasiStatusMasuk, evaluasiStatusKeluar } from "@/lib/shift";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
+
+export async function GET() {
+  try {
+    const todayStr = new Date().toISOString().split("T")[0];
+
+    const [dapur] = await db
+      .select()
+      .from(konfigurasiDapur)
+      .where(eq(konfigurasiDapur.id, 1))
+      .limit(1);
+
+    const daftarAnggota = await db
+      .select({
+        id: anggota.id,
+        namaLengkap: anggota.namaLengkap,
+        jabatan: anggota.jabatan,
+        nik: anggota.nik,
+      })
+      .from(anggota)
+      .where(eq(anggota.statusAktif, true));
+
+    const shifts = await db.select().from(shiftKerja);
+
+    const presensiHariIni = await db
+      .select({
+        id: absensi.id,
+        anggotaId: absensi.anggotaId,
+        namaAnggota: anggota.namaLengkap,
+        jenis: absensi.jenis,
+        waktuCatat: absensi.waktuCatat,
+        status: absensi.status,
+        isInRadius: absensi.isInRadius,
+        jarakKeDapurMeter: absensi.jarakKeDapurMeter,
+      })
+      .from(absensi)
+      .innerJoin(anggota, eq(absensi.anggotaId, anggota.id))
+      .where(eq(absensi.tanggal, todayStr))
+      .orderBy(desc(absensi.waktuCatat));
+
+    return NextResponse.json({
+      dapur: dapur || {
+        namaDapur: "Dapur Sentral SPPG",
+        latitude: "-6.20000000",
+        longitude: "106.81666600",
+        radiusMeter: 100,
+      },
+      daftarAnggota,
+      shifts,
+      presensiHariIni,
+    });
+  } catch (error: unknown) {
+    const err = error as { message?: string };
+    return NextResponse.json(
+      { error: err?.message || "Gagal memuat data presensi." },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,6 +73,7 @@ export async function POST(req: NextRequest) {
       longitude,
       fotoBuktiUrl,
       catatan,
+      isBiometricVerified,
     } = body;
 
     if (!anggotaId || !jenis || latitude === undefined || longitude === undefined) {
@@ -94,13 +153,13 @@ export async function POST(req: NextRequest) {
         anggotaId,
         jenis,
         status: statusPresensi,
-        metode: "selfie_gps",
+        metode: isBiometricVerified ? "selfie_gps" : "selfie_gps",
         latitude: String(latitude),
         longitude: String(longitude),
         jarakKeDapurMeter: jarakMeter,
         isInRadius,
         fotoBuktiUrl: fotoBuktiUrl || null,
-        catatan: catatan || null,
+        catatan: catatan || (isBiometricVerified ? "Verifikasi Biometrik WebAuthn Sukses" : null),
       })
       .returning();
 

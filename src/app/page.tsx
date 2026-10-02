@@ -55,12 +55,12 @@ export default function Home() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <a
-              href="#presensi-preview"
+            <Link
+              href="/presensi"
               className="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-brand-dark text-white font-semibold text-sm hover:bg-brand-dark/90 transition shadow-sm"
             >
-              Simulasi Presensi
-            </a>
+              Buka Form Presensi Mobile
+            </Link>
             <a
               href="#dashboard-preview"
               className="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-white text-brand-dark border border-brand-dark/20 font-semibold text-sm hover:bg-brand-canvas transition"
