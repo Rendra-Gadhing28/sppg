@@ -186,6 +186,16 @@ export default function DashboardPage() {
             </Link>
             <button
               type="button"
+              onClick={async () => {
+                await fetch("/api/auth/logout", { method: "POST" });
+                window.location.href = "/login";
+              }}
+              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition cursor-pointer"
+            >
+              Keluar
+            </button>
+            <button
+              type="button"
               onClick={fetchDashboardData}
               disabled={isLoading}
               className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition text-xs flex items-center justify-center cursor-pointer"
