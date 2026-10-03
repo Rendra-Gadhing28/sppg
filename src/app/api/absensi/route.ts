@@ -5,7 +5,8 @@ import { absensi, konfigurasiDapur, jadwalShift, shiftKerja, anggota } from "@/d
 import { cekDalamRadius } from "@/lib/geo";
 import { evaluasiStatusMasuk, evaluasiStatusKeluar } from "@/lib/shift";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { eq, and, desc } from "drizzle-orm";
+import { isWajahCocok } from "@/lib/face-biometric";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 export async function GET() {
   try {
@@ -25,6 +26,7 @@ export async function GET() {
         nik: anggota.nik,
         fotoUrl: anggota.fotoUrl,
         fotoTanganUrl: anggota.fotoTanganUrl,
+        hasFaceEmbedding: sql<boolean>`case when ${anggota.faceEmbedding} is not null then true else false end`,
       })
       .from(anggota)
       .where(eq(anggota.statusAktif, true));
@@ -87,6 +89,7 @@ export async function POST(req: NextRequest) {
       fotoBuktiUrl,
       catatan,
       isBiometricVerified,
+      faceVector,
     } = body;
 
     if (!anggotaId || !jenis || latitude === undefined || longitude === undefined) {
@@ -103,7 +106,50 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Ambil config dapur (default ke titik acuan jika belum di-seed)
+    // 1. Ambil data anggota & validasi biometrik
+    const [targetAnggota] = await db
+      .select({
+        id: anggota.id,
+        namaLengkap: anggota.namaLengkap,
+        faceEmbedding: anggota.faceEmbedding,
+      })
+      .from(anggota)
+      .where(eq(anggota.id, anggotaId))
+      .limit(1);
+
+    if (!targetAnggota) {
+      return NextResponse.json({ error: "Data pekerja tidak ditemukan." }, { status: 404 });
+    }
+
+    let metodePresensi: "selfie_gps" | "face_recognition" = "selfie_gps";
+    let confidenceStr: string | null = null;
+
+    if (targetAnggota.faceEmbedding && Array.isArray(targetAnggota.faceEmbedding)) {
+      if (!faceVector || !Array.isArray(faceVector)) {
+        return NextResponse.json(
+          { error: "Pekerja ini wajib verifikasi scan wajah. Data koordinat wajah tidak terdeteksi." },
+          { status: 400 }
+        );
+      }
+
+      const hasilWajah = isWajahCocok(faceVector, targetAnggota.faceEmbedding);
+      if (!hasilWajah.cocok) {
+        return NextResponse.json(
+          {
+            error: `Verifikasi wajah ditolak: Wajah tidak cocok dengan profil ${targetAnggota.namaLengkap}. Jarak kemiripan ${hasilWajah.distance.toFixed(3)} melebihi ambang batas.`,
+          },
+          { status: 403 }
+        );
+      }
+
+      metodePresensi = "face_recognition";
+      confidenceStr = hasilWajah.confidence.toFixed(4);
+    } else if (faceVector && Array.isArray(faceVector)) {
+      metodePresensi = "face_recognition";
+      confidenceStr = "1.0000";
+    }
+
+    // 2. Ambil config dapur (default ke titik acuan jika belum di-seed)
     const [dapur] = await db
       .select()
       .from(konfigurasiDapur)
@@ -177,13 +223,16 @@ export async function POST(req: NextRequest) {
         anggotaId,
         jenis,
         status: statusPresensi,
-        metode: isBiometricVerified ? "selfie_gps" : "selfie_gps",
+        metode: metodePresensi,
         latitude: String(latitude),
         longitude: String(longitude),
         jarakKeDapurMeter: jarakMeter,
         isInRadius,
         fotoBuktiUrl: fotoHash,
-        catatan: catatan || (isBiometricVerified ? "Verifikasi Biometrik WebAuthn Sukses" : null),
+        faceConfidence: confidenceStr,
+        catatan: catatan || (metodePresensi === "face_recognition"
+          ? `Verifikasi Wajah Terkonfirmasi (${(Number(confidenceStr) * 100).toFixed(1)}%)`
+          : (isBiometricVerified ? "Verifikasi Biometrik WebAuthn Sukses" : null)),
       })
       .returning();
 

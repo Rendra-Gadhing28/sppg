@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { anggota, jadwalShift, shiftKerja } from "@/db/schema";
 import { anggotaSchema } from "@/lib/validators";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 
 export async function GET() {
   try {
@@ -17,6 +17,7 @@ export async function GET() {
         fotoTanganUrl: anggota.fotoTanganUrl,
         statusAktif: anggota.statusAktif,
         createdAt: anggota.createdAt,
+        hasFaceEmbedding: sql<boolean>`case when ${anggota.faceEmbedding} is not null then true else false end`,
       })
       .from(anggota)
       .orderBy(desc(anggota.createdAt));
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
           nomorHp: data.nomorHp || null,
           fotoUrl: data.fotoUrl || null,
           fotoTanganUrl: data.fotoTanganUrl || null,
+          faceEmbedding: data.faceEmbedding || null,
           statusAktif: true,
         })
         .returning();

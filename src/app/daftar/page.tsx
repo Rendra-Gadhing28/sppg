@@ -17,8 +17,8 @@ import {
   Fingerprint,
   Calendar,
   ScanFace,
-  Scan,
 } from "lucide-react";
+import { extractFaceVector } from "@/lib/face-api-client";
 
 interface ShiftOption {
   id: number;
@@ -55,6 +55,8 @@ export default function RegistrasiKaryawanPage() {
   const [fotoTangan, setFotoTangan] = useState<string | null>(null);
   const [palmHash, setPalmHash] = useState<string | null>(null);
   const [isScanningPalm, setIsScanningPalm] = useState(false);
+  const [faceVector, setFaceVector] = useState<number[] | null>(null);
+  const [isExtractingFace, setIsExtractingFace] = useState(false);
 
   // Camera & Status
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -142,7 +144,7 @@ export default function RegistrasiKaryawanPage() {
   }, [step, startCamera, stopCamera]);
 
   // Jepret Foto Wajah
-  const handleCaptureFace = () => {
+  const handleCaptureFace = async () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
@@ -156,6 +158,23 @@ export default function RegistrasiKaryawanPage() {
         ctx.restore();
         const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
         setFotoWajah(dataUrl);
+
+        // Ekstrak face embedding
+        setIsExtractingFace(true);
+        setFaceVector(null);
+        try {
+          const vector = await extractFaceVector(canvas);
+          if (vector && vector.length === 128) {
+            setFaceVector(vector);
+          } else {
+            setFaceVector(null);
+            setErrorMsg("Wajah tidak terdeteksi dengan jelas. Pastikan pencahayaan cukup dan wajah tegak menghadap kamera.");
+          }
+        } catch {
+          setFaceVector(null);
+        } finally {
+          setIsExtractingFace(false);
+        }
       }
     }
   };
@@ -224,6 +243,7 @@ export default function RegistrasiKaryawanPage() {
         shiftId: shiftId ? Number(shiftId) : undefined,
         fotoUrl: fotoWajah || undefined,
         fotoTanganUrl: fotoTangan || undefined,
+        faceEmbedding: faceVector || undefined,
       };
 
       const res = await fetch("/api/anggota", {
@@ -259,6 +279,7 @@ export default function RegistrasiKaryawanPage() {
     setFotoWajah(null);
     setFotoTangan(null);
     setPalmHash(null);
+    setFaceVector(null);
     setSuccessData(null);
     setErrorMsg(null);
     setStep(1);
@@ -580,6 +601,26 @@ export default function RegistrasiKaryawanPage() {
                   <p className="text-xs text-red-600 font-semibold">{cameraError}</p>
                 )}
 
+                {/* Indikator status biometrik wajah */}
+                {fotoWajah && (
+                  <div className="text-xs">
+                    {isExtractingFace ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-600 font-semibold">
+                        <span className="w-3 h-3 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin inline-block" />
+                        Memproses biometrik wajah...
+                      </span>
+                    ) : faceVector ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-green/20 border border-brand-green/40 text-brand-dark font-bold">
+                        ✅ Biometrik Wajah Tersimpan (128 Vektor)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 border border-orange-300 text-orange-800 font-semibold">
+                        ⚠️ Wajah tidak terdeteksi dengan jelas. Pastikan wajah tegak menghadap kamera.
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* Navigasi Step 2 */}
                 <div className="flex items-center gap-3 pt-2">
                   <button
@@ -594,7 +635,7 @@ export default function RegistrasiKaryawanPage() {
                     <>
                       <button
                         type="button"
-                        onClick={() => setFotoWajah(null)}
+                        onClick={() => { setFotoWajah(null); setFaceVector(null); }}
                         className="min-h-[44px] px-4 rounded-xl border border-brand-dark/20 text-xs font-bold text-brand-dark hover:bg-brand-canvas transition flex items-center gap-1.5"
                       >
                         <RotateCcw className="w-3.5 h-3.5" /> Foto Ulang

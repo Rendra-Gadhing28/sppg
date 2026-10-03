@@ -48,4 +48,38 @@ const invalidNik = anggotaSchema.safeParse({
 });
 assert.strictEqual(invalidNik.success, false);
 
+// 5. faceEmbedding valid: 128 float
+const valid128 = anggotaSchema.safeParse({
+  nik: "3201012345670001",
+  namaLengkap: "Siti Rahayu",
+  jabatan: "Chef",
+  faceEmbedding: Array(128).fill(0.1),
+});
+assert.strictEqual(valid128.success, true, "faceEmbedding 128 float harus valid");
+
+// 6. faceEmbedding invalid: < 128 elemen
+const invalidEmbed = anggotaSchema.safeParse({
+  nik: "3201012345670001",
+  namaLengkap: "Siti Rahayu",
+  jabatan: "Chef",
+  faceEmbedding: Array(64).fill(0.1),
+});
+assert.strictEqual(invalidEmbed.success, false, "faceEmbedding < 128 harus invalid");
+
+// 7. faceEmbedding optional/nullable
+const noEmbed = anggotaSchema.safeParse({
+  nik: "3201012345670001",
+  namaLengkap: "Siti Rahayu",
+  jabatan: "Chef",
+});
+assert.strictEqual(noEmbed.success, true, "faceEmbedding opsional harus valid");
+
+const nullEmbed = anggotaSchema.safeParse({
+  nik: "3201012345670001",
+  namaLengkap: "Siti Rahayu",
+  jabatan: "Chef",
+  faceEmbedding: null,
+});
+assert.strictEqual(nullEmbed.success, true, "faceEmbedding null harus valid");
+
 console.log("✓ Semua runnable check validator lolos 100%.");

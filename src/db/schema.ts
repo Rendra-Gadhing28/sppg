@@ -40,6 +40,7 @@ export const absensiStatusEnum = pgEnum("absensi_status", [
 
 export const absensiMetodeEnum = pgEnum("absensi_metode", [
   "selfie_gps",
+  "face_recognition",
   "qr_kiosk",
   "manual_admin",
 ]);
@@ -203,6 +204,7 @@ export const anggota = pgTable("anggota", {
   nomorHp: varchar("nomor_hp", { length: 20 }),
   fotoUrl: text("foto_url"),
   fotoTanganUrl: text("foto_tangan_url"),
+  faceEmbedding: jsonb("face_embedding").$type<number[]>(),
   statusAktif: boolean("status_aktif").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -255,6 +257,7 @@ export const absensi = pgTable(
     isInRadius: boolean("is_in_radius").notNull().default(false),
     fotoBuktiUrl: text("foto_bukti_url"),
     catatan: text("catatan"),
+    faceConfidence: decimal("face_confidence", { precision: 5, scale: 4 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

@@ -18,12 +18,14 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { hitungJarakMeter } from "@/lib/geo";
+import { extractFaceVector, loadFaceModels } from "@/lib/face-api-client";
 
 interface AnggotaItem {
   id: string;
   namaLengkap: string;
   jabatan: string;
   nik: string;
+  hasFaceEmbedding?: boolean;
 }
 
 interface DapurConfig {
@@ -149,7 +151,7 @@ export default function PresensiPage() {
 
   // ── Core submit (no event, used internally too) ──────────────────────────
   const submitPresensi = useCallback(
-    async (photo: string, currentCoords: { lat: number; lng: number }, biometric: boolean) => {
+    async (photo: string, currentCoords: { lat: number; lng: number }, biometric: boolean, faceVector?: number[] | null) => {
       if (!selectedAnggotaId) return;
       setIsLoading(true);
       setAlert(null);
@@ -163,6 +165,7 @@ export default function PresensiPage() {
           longitude: currentCoords.lng,
           fotoBuktiUrl: fotoHash,
           isBiometricVerified: biometric,
+          faceVector: faceVector || undefined,
         };
         const res = await fetch("/api/absensi", {
           method: "POST",
@@ -222,6 +225,11 @@ export default function PresensiPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Pre-load face models on mount (background, non-blocking)
+  useEffect(() => {
+    loadFaceModels().catch(() => {});
+  }, []);
 
   // Save employee selection to localStorage
   useEffect(() => {
@@ -349,16 +357,60 @@ export default function PresensiPage() {
   );
 
   // ── Face scan tap ─────────────────────────────────────────────────────────
-  const handleScanWajah = useCallback(() => {
+  const handleScanWajah = useCallback(async () => {
     if (!isCameraActive) return;
+
+    if (!selectedAnggotaId) {
+      setAlert({ type: "error", message: "Pilih pekerja terlebih dahulu sebelum melakukan scan wajah." });
+      return;
+    }
+
     setScanVerifying(true);
     setSubmitToast("🔍 Memindai wajah...");
-    setTimeout(() => {
+
+    try {
+      const vector = await extractFaceVector(videoRef.current!);
+
+      if (!vector || vector.length !== 128) {
+        setScanVerifying(false);
+        setSubmitToast(null);
+        setAlert({ type: "error", message: "Wajah tidak terdeteksi di kamera! Posisikan wajah tepat di tengah bingkai." });
+        return;
+      }
+
+      // Capture frame ke canvas
+      if (!canvasRef.current || !videoRef.current) {
+        setScanVerifying(false);
+        return;
+      }
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth || 480;
+      canvas.height = video.videoHeight || 360;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      }
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+      setCapturedPhoto(dataUrl);
+      stopCamera();
+
       setScanVerifying(false);
       setSubmitToast("✅ Wajah terverifikasi! Mengirim presensi...");
-      captureAndSubmit(biometricVerified);
-    }, 900);
-  }, [isCameraActive, biometricVerified, captureAndSubmit]);
+
+      if (!coords) {
+        setPendingSubmit(true);
+        setSubmitToast("📍 Menunggu sinyal GPS dapur...");
+        ambilLokasi();
+        return;
+      }
+      await submitPresensi(dataUrl, coords, biometricVerified, vector);
+    } catch {
+      setScanVerifying(false);
+      setSubmitToast(null);
+      setAlert({ type: "error", message: "Wajah tidak terdeteksi di kamera! Posisikan wajah tepat di tengah bingkai." });
+    }
+  }, [isCameraActive, selectedAnggotaId, biometricVerified, coords, stopCamera, ambilLokasi, submitPresensi]);
 
   // ── Fingerprint tap → capture frame + submit ──────────────────────────────
   const handleVerifyBiometric = useCallback(async () => {
@@ -495,6 +547,11 @@ export default function PresensiPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-brand-dark truncate">{activeAnggota.namaLengkap}</p>
                   <p className="text-[11px] text-brand-dark/60">{activeAnggota.jabatan}</p>
+                  {activeAnggota.hasFaceEmbedding && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 mt-0.5">
+                      🛡️ Wajah Terdaftar
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -518,7 +575,7 @@ export default function PresensiPage() {
                 >
                   {anggotaList.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.namaLengkap} — {a.jabatan}
+                      {a.hasFaceEmbedding ? "🛡️ " : ""}{a.namaLengkap} — {a.jabatan}
                     </option>
                   ))}
                 </select>

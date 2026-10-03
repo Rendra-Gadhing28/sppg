@@ -91,6 +91,7 @@ export const anggotaSchema = z.object({
     .nullable(),
   fotoUrl: z.string().optional().nullable(),
   fotoTanganUrl: z.string().optional().nullable(),
+  faceEmbedding: z.array(z.number()).length(128, "Embedding wajah harus berupa 128 koordinat float.").optional().nullable(),
   shiftId: z.coerce.number().int().positive().optional().nullable(),
 });
 
