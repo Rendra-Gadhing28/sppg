@@ -47,16 +47,16 @@ async function seed() {
     .values({
       id: 1,
       namaDapur: "Dapur Sentral SPPG Mandiri Jaya",
-      latitude: "-6.20000000",
-      longitude: "106.81666600",
+      latitude: process.env.DEFAULT_LATITUDE || "-7.01513889",
+      longitude: process.env.DEFAULT_LONGITUDE || "110.44802778",
       radiusMeter: 100,
     })
     .onConflictDoUpdate({
       target: konfigurasiDapur.id,
       set: {
         namaDapur: "Dapur Sentral SPPG Mandiri Jaya",
-        latitude: "-6.20000000",
-        longitude: "106.81666600",
+        latitude: process.env.DEFAULT_LATITUDE || "-7.01513889",
+        longitude: process.env.DEFAULT_LONGITUDE || "110.44802778",
         radiusMeter: 100,
       },
     });

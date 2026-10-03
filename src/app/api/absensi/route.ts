@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { absensi, konfigurasiDapur, jadwalShift, shiftKerja, anggota } from "@/db/schema";
@@ -49,8 +50,8 @@ export async function GET() {
     return NextResponse.json({
       dapur: dapur || {
         namaDapur: "Dapur Sentral SPPG",
-        latitude: "-6.20000000",
-        longitude: "106.81666600",
+        latitude: process.env.DEFAULT_LATITUDE || "-7.01513889",
+        longitude: process.env.DEFAULT_LONGITUDE || "110.44802778",
         radiusMeter: 100,
       },
       daftarAnggota,
@@ -109,8 +110,8 @@ export async function POST(req: NextRequest) {
       .where(eq(konfigurasiDapur.id, 1))
       .limit(1);
 
-    const dapurLat = dapur ? Number(dapur.latitude) : -6.2;
-    const dapurLon = dapur ? Number(dapur.longitude) : 106.816666;
+    const dapurLat = dapur ? Number(dapur.latitude) : Number(process.env.DEFAULT_LATITUDE || -7.01513889);
+    const dapurLon = dapur ? Number(dapur.longitude) : Number(process.env.DEFAULT_LONGITUDE || 110.44802778);
     const radiusMaks = dapur ? dapur.radiusMeter : 100;
 
     // 2. Evaluasi Geofence
@@ -158,7 +159,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Simpan presensi
+    // 4. Hash foto bukti (jangan simpan base64 raw ke DB)
+    let fotoHash: string | null = null;
+    if (fotoBuktiUrl) {
+      if (typeof fotoBuktiUrl === "string" && fotoBuktiUrl.startsWith("sha256:")) {
+        fotoHash = fotoBuktiUrl;
+      } else {
+        const hash = crypto.createHash("sha256").update(String(fotoBuktiUrl)).digest("hex");
+        fotoHash = `sha256:${hash}`;
+      }
+    }
+
+    // 5. Simpan presensi
     const [record] = await db
       .insert(absensi)
       .values({
@@ -170,7 +182,7 @@ export async function POST(req: NextRequest) {
         longitude: String(longitude),
         jarakKeDapurMeter: jarakMeter,
         isInRadius,
-        fotoBuktiUrl: fotoBuktiUrl || null,
+        fotoBuktiUrl: fotoHash,
         catatan: catatan || (isBiometricVerified ? "Verifikasi Biometrik WebAuthn Sukses" : null),
       })
       .returning();
@@ -183,9 +195,11 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error: unknown) {
-    const err = error as { code?: string; message?: string };
+    const err = error as { code?: string; cause?: { code?: string }; message?: string };
+    const errCode = err?.code || err?.cause?.code;
+
     // PostgreSQL unique violation code 23505
-    if (err?.code === "23505") {
+    if (errCode === "23505") {
       return NextResponse.json(
         { error: "Anda sudah melakukan presensi ini hari ini." },
         { status: 409 }

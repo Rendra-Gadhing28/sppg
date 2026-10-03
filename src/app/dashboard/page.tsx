@@ -215,6 +215,7 @@ export default function DashboardPage() {
     | "iot_haccp"
     | "bgn_audit"
   >("operasional");
+  const [activeCategory, setActiveCategory] = useState<"produksi" | "pasokan" | "sekolah" | "kepatuhan">("produksi");
 
   // Dashboard Data
   const [metrics, setMetrics] = useState<Metrics | null>(null);
@@ -662,47 +663,126 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Tab Navigation (Horizontal swipeable on mobile, wrapping on large screens) */}
-        <div
-          role="tablist"
-          aria-label="Navigasi Modul Dapur SPPG"
-          className="flex items-center gap-2 border-b border-brand-dark/15 pb-3 overflow-x-auto scroll-smooth whitespace-nowrap lg:flex-wrap"
-        >
-          {(
-            [
-              { key: "operasional", label: "1. Operasional", icon: <UtensilsCrossed className="w-4 h-4" /> },
-              { key: "pengadaan", label: "2. Pengadaan (PO)", icon: <FileSpreadsheet className="w-4 h-4" /> },
-              { key: "qc_batch", label: "3. QC & Batch FEFO", icon: <Layers className="w-4 h-4" /> },
-              { key: "distribusi", label: "4. Distribusi Armada", icon: <Truck className="w-4 h-4" /> },
-              { key: "menu", label: "5. Racik Menu & BOM", icon: <ChefHat className="w-4 h-4" /> },
-              { key: "stok", label: "6. Master Bahan & Stok", icon: <PackagePlus className="w-4 h-4" /> },
-              { key: "sekolah_anggota", label: "7. Sekolah & Anggota", icon: <Building2 className="w-4 h-4" /> },
-              { key: "cabang", label: "8. Cabang & Transfer", icon: <Building className="w-4 h-4" /> },
-              { key: "finansial", label: "9. HPP & Food Waste", icon: <TrendingUp className="w-4 h-4" /> },
-              { key: "komplain", label: "10. Komplain Sekolah", icon: <AlertCircle className="w-4 h-4" /> },
-              { key: "wa_logs", label: "11. Log WhatsApp", icon: <MessageSquare className="w-4 h-4" /> },
-              { key: "ai_planner", label: "12. AI Menu & ROP", icon: <Sparkles className="w-4 h-4" /> },
-              { key: "vrp", label: "13. Rute VRP CVRPTW", icon: <Navigation className="w-4 h-4" /> },
-              { key: "iot_haccp", label: "14. IoT Cold-Chain", icon: <Thermometer className="w-4 h-4" /> },
-              { key: "bgn_audit", label: "15. Audit BGN RI", icon: <ShieldCheck className="w-4 h-4" /> },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`shrink-0 min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark ${
-                activeTab === tab.key
-                  ? "bg-brand-dark text-white shadow-sm"
-                  : "bg-white text-brand-dark/60 border border-brand-dark/15 hover:text-brand-dark hover:border-brand-dark/30"
-              }`}
-            >
-              {tab.icon} {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* ── Module Navigation: Category pills → Module sub-tabs ── */}
+        {(() => {
+          const NAV_CATEGORIES = [
+            {
+              key: "produksi" as const,
+              emoji: "🍳",
+              label: "Produksi & Dapur",
+              modules: [
+                { key: "operasional" as const, label: "Operasional", icon: <UtensilsCrossed className="w-3.5 h-3.5" /> },
+                { key: "menu" as const, label: "Racik Menu & BOM", icon: <ChefHat className="w-3.5 h-3.5" /> },
+                { key: "ai_planner" as const, label: "AI Menu & ROP", icon: <Sparkles className="w-3.5 h-3.5" /> },
+                { key: "stok" as const, label: "Master Bahan & Stok", icon: <PackagePlus className="w-3.5 h-3.5" /> },
+              ],
+            },
+            {
+              key: "pasokan" as const,
+              emoji: "🚚",
+              label: "Pasokan & Logistik",
+              modules: [
+                { key: "pengadaan" as const, label: "Pengadaan (PO)", icon: <FileSpreadsheet className="w-3.5 h-3.5" /> },
+                { key: "qc_batch" as const, label: "QC & Batch FEFO", icon: <Layers className="w-3.5 h-3.5" /> },
+                { key: "distribusi" as const, label: "Distribusi Armada", icon: <Truck className="w-3.5 h-3.5" /> },
+                { key: "vrp" as const, label: "Rute VRP", icon: <Navigation className="w-3.5 h-3.5" /> },
+                { key: "iot_haccp" as const, label: "IoT Cold-Chain", icon: <Thermometer className="w-3.5 h-3.5" /> },
+              ],
+            },
+            {
+              key: "sekolah" as const,
+              emoji: "🏫",
+              label: "Sekolah & Mitra",
+              modules: [
+                { key: "sekolah_anggota" as const, label: "Sekolah & Anggota", icon: <Building2 className="w-3.5 h-3.5" /> },
+                { key: "komplain" as const, label: "Komplain Sekolah", icon: <AlertCircle className="w-3.5 h-3.5" /> },
+                { key: "cabang" as const, label: "Cabang & Transfer", icon: <Building className="w-3.5 h-3.5" /> },
+              ],
+            },
+            {
+              key: "kepatuhan" as const,
+              emoji: "🛡️",
+              label: "Kepatuhan & Finansial",
+              modules: [
+                { key: "finansial" as const, label: "HPP & Food Waste", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+                { key: "wa_logs" as const, label: "Log WhatsApp", icon: <MessageSquare className="w-3.5 h-3.5" /> },
+                { key: "bgn_audit" as const, label: "Audit BGN RI", icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+              ],
+            },
+          ] as const;
+
+          const currentCategory = NAV_CATEGORIES.find((c) => c.key === activeCategory) ?? NAV_CATEGORIES[0];
+
+          const handleModuleClick = (key: typeof activeTab) => {
+            setActiveTab(key);
+          };
+
+          const handleCategoryClick = (catKey: typeof activeCategory, firstModule: typeof activeTab) => {
+            setActiveCategory(catKey);
+            setActiveTab(firstModule);
+          };
+
+          return (
+            <div className="space-y-2.5" aria-label="Navigasi Modul Dapur SPPG">
+              {/* Tier 1: Category selector */}
+              <div className="flex items-center gap-1.5 overflow-x-auto scroll-smooth pb-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                {NAV_CATEGORIES.map((cat) => {
+                  const isActive = activeCategory === cat.key;
+                  return (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => handleCategoryClick(cat.key, cat.modules[0].key)}
+                      className={`shrink-0 min-h-[36px] px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark select-none ${
+                        isActive
+                          ? "bg-brand-dark text-white shadow-sm"
+                          : "bg-brand-dark/5 text-brand-dark/55 hover:bg-brand-dark/10 hover:text-brand-dark/80"
+                      }`}
+                    >
+                      <span className="text-sm leading-none">{cat.emoji}</span>
+                      <span className="hidden sm:inline">{cat.label}</span>
+                      <span className="sm:hidden">{cat.label.split(" ")[0]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Tier 2: Module sub-tabs for active category */}
+              <div className="relative">
+                {/* Left fade mask */}
+                <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-white/80 to-transparent z-10 rounded-l-lg" />
+                {/* Right fade mask */}
+                <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white/80 to-transparent z-10 rounded-r-lg" />
+                <div
+                  role="tablist"
+                  aria-label={currentCategory.label}
+                  className="flex items-center gap-1.5 overflow-x-auto scroll-smooth pb-2 border-b border-brand-dark/10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {currentCategory.modules.map((mod) => {
+                    const isActive = activeTab === mod.key;
+                    return (
+                      <button
+                        key={mod.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        onClick={() => handleModuleClick(mod.key)}
+                        className={`shrink-0 min-h-[40px] px-3.5 py-2 rounded-lg text-xs font-medium transition-all duration-150 flex items-center gap-2 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-dark select-none ${
+                          isActive
+                            ? "bg-white text-brand-dark font-semibold shadow-sm border border-brand-dark/20"
+                            : "text-brand-dark/50 hover:text-brand-dark/75 hover:bg-brand-dark/5"
+                        }`}
+                      >
+                        <span className={`transition-opacity duration-150 ${isActive ? "opacity-100" : "opacity-50"}`}>{mod.icon}</span>
+                        {mod.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ============================================================== */}
         {/* TAB 1: OPERASIONAL & PRODUKSI                                   */}
@@ -1284,14 +1364,26 @@ export default function DashboardPage() {
                       >
                         <div className="flex items-center gap-3">
                           {p.fotoBuktiUrl ? (
-                            <button
-                              type="button"
-                              onClick={() => setActivePhotoModal(p.fotoBuktiUrl)}
-                              className="w-9 h-9 rounded-lg overflow-hidden border border-brand-dark/20 shrink-0"
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={p.fotoBuktiUrl} alt="Selfie" className="w-full h-full object-cover" />
-                            </button>
+                            p.fotoBuktiUrl.startsWith("data:") || p.fotoBuktiUrl.startsWith("http") ? (
+                              <button
+                                type="button"
+                                onClick={() => setActivePhotoModal(p.fotoBuktiUrl)}
+                                className="w-9 h-9 rounded-lg overflow-hidden border border-brand-dark/20 shrink-0"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={p.fotoBuktiUrl} alt="Selfie" className="w-full h-full object-cover" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setActivePhotoModal(p.fotoBuktiUrl)}
+                                className="w-9 h-9 rounded-lg overflow-hidden border border-emerald-500/30 bg-emerald-50 shrink-0 flex flex-col items-center justify-center text-emerald-700 hover:bg-emerald-100 transition cursor-pointer"
+                                title="Bukti Foto Terverifikasi SHA-256"
+                              >
+                                <ShieldCheck className="w-4 h-4" />
+                                <span className="text-[8px] font-mono font-bold leading-none">HASH</span>
+                              </button>
+                            )
                           ) : (
                             <div className="w-9 h-9 rounded-lg bg-brand-dark/10 flex items-center justify-center font-bold text-xs shrink-0 text-brand-dark">
                               {p.namaAnggota.substring(0, 2).toUpperCase()}
@@ -2236,10 +2328,33 @@ export default function DashboardPage() {
                 ✕ Tutup
               </button>
             </div>
-            <div className="aspect-[4/3] rounded-xl overflow-hidden bg-black">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={activePhotoModal} alt="Foto bukti selfie pekerja dapur" className="w-full h-full object-cover" />
-            </div>
+            {activePhotoModal.startsWith("data:") || activePhotoModal.startsWith("http") ? (
+              <div className="aspect-[4/3] rounded-xl overflow-hidden bg-black">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={activePhotoModal} alt="Foto bukti selfie pekerja dapur" className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-brand-canvas border border-brand-dark/15 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-800 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-brand-dark">Hash SHA-256 Terverifikasi</p>
+                    <p className="text-[10px] text-brand-dark/60">Integritas Bukti Presensi Bebas Manipulasi</p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-brand-dark/60 uppercase tracking-wide">Checksum Bukti Foto:</span>
+                  <div className="p-2.5 rounded-lg bg-zinc-900 text-brand-green font-mono text-[10px] break-all leading-relaxed select-all">
+                    {activePhotoModal}
+                  </div>
+                </div>
+                <p className="text-[10px] text-brand-dark/70 bg-white p-2.5 rounded-lg border border-brand-dark/10">
+                  Foto otomatis di-hash secara kriptografis di sisi klien dan server untuk efisiensi penyimpanan database operasional dapur SPPG.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

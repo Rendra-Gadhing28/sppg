@@ -1,0 +1,147 @@
+export interface KpiTargetItem {
+  id: number;
+  kpi: string;
+  target: string;
+  fase: number;
+  kategori: "Presensi & Gizi" | "Rantai Pasok" | "Distribusi" | "Sistem & Keamanan";
+  keterangan: string;
+}
+
+export const TARGET_KPIS: KpiTargetItem[] = [
+  {
+    id: 1,
+    kpi: "Presensi valid di dalam radius 100 m",
+    target: "≥ 95%",
+    fase: 1,
+    kategori: "Presensi & Gizi",
+    keterangan: "Dihitung dari koordinat GPS Haversine terhadap pusat dapur",
+  },
+  {
+    id: 2,
+    kpi: "Kejadian saldo stok bernilai minus",
+    target: "0 kasus",
+    fase: 1,
+    kategori: "Rantai Pasok",
+    keterangan: "Integritas constraint database menolak saldo negatif",
+  },
+  {
+    id: 3,
+    kpi: "Kalkulasi BOM sesuai resep tanpa salah hitung",
+    target: "100%",
+    fase: 1,
+    kategori: "Presensi & Gizi",
+    keterangan: "Otomasi perkalian porsi × gramasi baku bahan",
+  },
+  {
+    id: 4,
+    kpi: "Pengeluaran bahan memakai batch terdekat kedaluwarsa (FEFO)",
+    target: "100%",
+    fase: 2,
+    kategori: "Rantai Pasok",
+    keterangan: "Algoritma FEFO mengunci urutan batch prioritas kedaluwarsa",
+  },
+  {
+    id: 5,
+    kpi: "Bahan kedaluwarsa lolos QC ke gudang",
+    target: "0 kasus",
+    fase: 2,
+    kategori: "Rantai Pasok",
+    keterangan: "Gerbang inspeksi menolak bahan dengan masa simpan habis",
+  },
+  {
+    id: 6,
+    kpi: "Pengantaran dengan e-POD lengkap (foto & tanda tangan)",
+    target: "≥ 98%",
+    fase: 2,
+    kategori: "Distribusi",
+    keterangan: "Bukti sah serah terima digital di setiap titik sekolah mitra",
+  },
+  {
+    id: 7,
+    kpi: "Porsi tiba sebelum jam makan siang terjadwal (SLA 11.00)",
+    target: "≥ 90%",
+    fase: 2,
+    kategori: "Distribusi",
+    keterangan: "Ketepatan waktu armada sesuai jendela jadwal makan siswa",
+  },
+  {
+    id: 8,
+    kpi: "Transaksi offline tersinkron tanpa data hilang",
+    target: "100%",
+    fase: 3,
+    kategori: "Sistem & Keamanan",
+    keterangan: "Antrean terisolasi IndexedDB dengan kunci idempotensi",
+  },
+  {
+    id: 9,
+    kpi: "Notifikasi WhatsApp penting terkirim cepat",
+    target: "≥ 95% (< 60 dtk)",
+    fase: 3,
+    kategori: "Sistem & Keamanan",
+    keterangan: "PO ke supplier, pengingat jadwal shift, dan peringatan stok",
+  },
+  {
+    id: 10,
+    kpi: "Selisih HPP estimasi vs riil",
+    target: "≤ 3%",
+    fase: 3,
+    kategori: "Presensi & Gizi",
+    keterangan: "Deviasi biaya belanja bahan terhadap rencana anggaran menu",
+  },
+  {
+    id: 11,
+    kpi: "Rasio food waste dari total volume bahan",
+    target: "≤ 4%",
+    fase: 3,
+    kategori: "Presensi & Gizi",
+    keterangan: "Akumulasi residu persiapan, sisa masak, dan distribusi",
+  },
+  {
+    id: 12,
+    kpi: "Respons awal tiket aduan sekolah",
+    target: "≤ 60 menit",
+    fase: 3,
+    kategori: "Distribusi",
+    keterangan: "SLA penanganan keluhan menu atau keterlambatan boks",
+  },
+  {
+    id: 13,
+    kpi: "Galat peramalan kebutuhan bahan (MAPE)",
+    target: "≤ 8%",
+    fase: 4,
+    kategori: "Rantai Pasok",
+    keterangan: "Ketepatan prediksi pengadaan berbasis riwayat produksi",
+  },
+  {
+    id: 14,
+    kpi: "Penghematan jarak tempuh armada (BBM ≥ 12%)",
+    target: "≥ 15%",
+    fase: 4,
+    kategori: "Distribusi",
+    keterangan: "Optimasi multi-drop VRP klaster rute sekolah",
+  },
+  {
+    id: 15,
+    kpi: "Durasi distribusi pada suhu aman 60 °C atau lebih",
+    target: "≥ 99,5%",
+    fase: 4,
+    kategori: "Distribusi",
+    keterangan: "Telemetri sensor boks termal pengantar makanan matang",
+  },
+  {
+    id: 16,
+    kpi: "Laporan audit bulanan terbit setelah tutup buku",
+    target: "≤ 30 menit",
+    fase: 4,
+    kategori: "Sistem & Keamanan",
+    keterangan: "Otomasi rekonsiliasi data inventori dan pengeluaran",
+  },
+  {
+    id: 17,
+    kpi: "Siklus menu AI memenuhi AKG per jenjang",
+    target: "100%",
+    fase: 4,
+    kategori: "Presensi & Gizi",
+    keterangan: "Pemberian variasi 5 unsur makanan tanpa repetisi lauk 5 hari",
+  },
+];

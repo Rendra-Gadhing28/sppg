@@ -78,6 +78,25 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {/* Akses Cepat Presensi Pekerja Tanpa Login */}
+          <div className="p-3.5 rounded-2xl bg-brand-green/20 border border-brand-green/40 flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-brand-dark flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shrink-0" />
+                Pekerja Dapur / Tim Armada?
+              </p>
+              <p className="text-[11px] text-brand-dark/75">
+                Presensi mandiri (selfie & GPS) langsung tanpa perlu login akun staf.
+              </p>
+            </div>
+            <Link
+              href="/presensi"
+              className="shrink-0 px-3.5 py-2 rounded-xl bg-brand-dark text-white text-xs font-bold hover:bg-brand-dark/90 active:scale-95 transition shadow-xs cursor-pointer whitespace-nowrap"
+            >
+              Presensi HP →
+            </Link>
+          </div>
+
           {errorMsg && (
             <div role="alert" className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />

@@ -1,53 +1,203 @@
 @import "tailwindcss";
 
-@theme {
+@theme inline {
+  --font-display: var(--font-baloo), ui-rounded, system-ui, sans-serif;
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
+}
+
+@theme static {
+  /* Brand Master Palette */
   --color-brand-dark: #071e49;
   --color-brand-pastel: #b4dfe9;
   --color-brand-green: #92d05d;
   --color-brand-gold: #d1b06c;
   --color-brand-canvas: #f8fafb;
-  --font-sans: var(--font-jakarta), system-ui, sans-serif;
+
+  /* Aliased semantic tokens mapping to Brand Palette */
+  --color-padi-50: #ffffff;
+  --color-padi-100: #f8fafb;
+  --color-padi-200: #e8f3f6;
+  --color-ink-900: #071e49;
+  --color-ink-600: #395078;
+
+  --color-daun-100: #eaf6df;
+  --color-daun-400: #92d05d;
+  --color-daun-700: #071e49;
+
+  --color-telur-100: #fbf5e7;
+  --color-telur-400: #d1b06c;
+
+  --color-wortel-100: #feeee1;
+  --color-wortel-400: #ffa24d;
+
+  --color-es-100: #eef7fa;
+  --color-es-400: #b4dfe9;
+
+  --color-terung-100: #ebeffe;
+  --color-terung-400: #8f94fb;
+
+  --color-cabai-100: #ffe8e8;
+  --color-cabai-400: #ff6b6b;
+
+  --radius-clay-xs: 12px;
+  --radius-clay-sm: 18px;
+  --radius-clay-md: 26px;
+  --radius-clay-lg: 36px;
+  --radius-clay-xl: 52px;
 }
 
 :root {
-  --background: var(--color-brand-canvas);
-  --foreground: var(--color-brand-dark);
+  color-scheme: light;
+  --clay-bg: #ffffff;
+  --clay-shade: #071e49;
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
+  --font-display: var(--font-baloo), ui-rounded, system-ui, sans-serif;
 }
 
-html {
-  scroll-behavior: smooth;
+[data-tone="navy"]        { --clay-bg: #071e49; --clay-shade: #030d22; color: #ffffff; }
+[data-tone="brand"]       { --clay-bg: #071e49; --clay-shade: #030d22; color: #ffffff; }
+[data-tone="pastel"]      { --clay-bg: #b4dfe9; --clay-shade: #4a8290; color: #071e49; }
+[data-tone="pastel-soft"] { --clay-bg: #eef7fa; --clay-shade: #4a8290; color: #071e49; }
+[data-tone="green"]       { --clay-bg: #92d05d; --clay-shade: #4e8223; color: #071e49; }
+[data-tone="gold"]        { --clay-bg: #d1b06c; --clay-shade: #785a22; color: #071e49; }
+
+[data-tone="daun"]        { --clay-bg: #92d05d; --clay-shade: #4e8223; color: #071e49; }
+[data-tone="daun-soft"]   { --clay-bg: #eaf6df; --clay-shade: #4e8223; color: #071e49; }
+[data-tone="telur"]       { --clay-bg: #d1b06c; --clay-shade: #785a22; color: #071e49; }
+[data-tone="telur-soft"]  { --clay-bg: #fbf5e7; --clay-shade: #785a22; color: #071e49; }
+[data-tone="wortel"]      { --clay-bg: #ffa24d; --clay-shade: #ba5f14; color: #071e49; }
+[data-tone="wortel-soft"] { --clay-bg: #feeee1; --clay-shade: #ba5f14; color: #071e49; }
+[data-tone="es"]          { --clay-bg: #b4dfe9; --clay-shade: #4a8290; color: #071e49; }
+[data-tone="es-soft"]     { --clay-bg: #eef7fa; --clay-shade: #4a8290; color: #071e49; }
+[data-tone="terung"]      { --clay-bg: #8f94fb; --clay-shade: #4c52ba; color: #071e49; }
+[data-tone="terung-soft"] { --clay-bg: #ebeffe; --clay-shade: #4c52ba; color: #071e49; }
+[data-tone="cabai"]       { --clay-bg: #ff6b6b; --clay-shade: #ba2828; color: #071e49; }
+[data-tone="cabai-soft"]  { --clay-bg: #ffe8e8; --clay-shade: #ba2828; color: #071e49; }
+[data-tone="padi"]        { --clay-bg: #ffffff; --clay-shade: #071e49; color: #071e49; }
+[data-tone="padi-soft"]   { --clay-bg: #f0f7f9; --clay-shade: #071e49; color: #071e49; }
+
+/* Claymorphism core utilities with Brand Navy Tinted Shadows */
+.clay {
+  background: var(--clay-bg, #ffffff);
+  border-radius: var(--radius-clay-lg, 36px);
+  box-shadow:
+    10px 16px 30px -10px color-mix(in srgb, var(--clay-shade, #071e49) 32%, transparent),
+    -8px -8px 18px rgb(255 255 255 / 0.95),
+    inset 6px 6px 14px rgb(255 255 255 / 0.8),
+    inset -8px -10px 18px color-mix(in srgb, var(--clay-shade, #071e49) 18%, transparent);
 }
 
-::selection {
-  background-color: var(--color-brand-pastel);
-  color: var(--color-brand-dark);
+.clay-sm {
+  background: var(--clay-bg, #ffffff);
+  border-radius: var(--radius-clay-sm, 18px);
+  box-shadow:
+    5px 8px 16px -5px color-mix(in srgb, var(--clay-shade, #071e49) 30%, transparent),
+    -4px -4px 10px rgb(255 255 255 / 0.95),
+    inset 3px 3px 7px rgb(255 255 255 / 0.8),
+    inset -4px -5px 9px color-mix(in srgb, var(--clay-shade, #071e49) 18%, transparent);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
+.clay-inset {
+  background: color-mix(in srgb, var(--clay-shade, #071e49) 5%, var(--clay-bg, #ffffff));
+  border-radius: var(--radius-clay-md, 26px);
+  box-shadow:
+    inset 5px 5px 12px color-mix(in srgb, var(--clay-shade, #071e49) 20%, transparent),
+    inset -5px -5px 12px rgb(255 255 255 / 0.95);
+}
+
+.clay-gloss {
+  position: relative;
+  isolation: isolate;
+}
+
+.clay-gloss::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 18% 0%, rgb(255 255 255 / 0.55), transparent 55%);
+}
+
+/* Typography styles */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-sans {
   font-family: var(--font-sans);
-  font-feature-settings: "tnum";
-  caret-color: var(--color-brand-dark);
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-brand-dark);
-  outline-offset: 2px;
+/* Smooth scrolling offset */
+[id] {
+  scroll-margin-top: 104px;
 }
 
-/* Custom themed scrollbars */
+/* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #f8fafb;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(7, 30, 73, 0.2);
+  background: #b4dfe9;
   border-radius: 9999px;
+  border: 2px solid #f8fafb;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(7, 30, 73, 0.4);
+  background: #071e49;
+}
+
+/* Steam animation for Hero Ompreng */
+@keyframes steam {
+  0% {
+    transform: translateY(0) scaleY(1);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-24px) scaleY(1.15);
+    opacity: 0;
+  }
+}
+
+/* Marquee Animation for Strip Peran */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 40s linear infinite;
+}
+
+.animate-marquee:hover,
+.animate-marquee:focus-within {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none !important;
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+  *, ::before, ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  button, a, input, select, textarea {
+    transition-duration: 0.15s !important;
+    transition-property: color, background-color, border-color, opacity, box-shadow !important;
+    transform: none !important;
+  }
 }

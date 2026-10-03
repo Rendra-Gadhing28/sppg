@@ -46,8 +46,8 @@ export async function POST(req: NextRequest) {
       // Ambil koordinat dapur
       const [konfig] = await db.select().from(konfigurasiDapur).limit(1);
       const depot = {
-        latitude: konfig?.latitude ? Number(konfig.latitude) : -6.2,
-        longitude: konfig?.longitude ? Number(konfig.longitude) : 106.816666,
+        latitude: konfig?.latitude ? Number(konfig.latitude) : Number(process.env.DEFAULT_LATITUDE || -7.01513889),
+        longitude: konfig?.longitude ? Number(konfig.longitude) : Number(process.env.DEFAULT_LONGITUDE || 110.44802778),
       };
 
       // Ambil kapasitas armada
